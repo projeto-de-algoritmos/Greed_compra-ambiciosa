@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import './Fase1.css'; // Importar o CSS para o componente
 
 const Fase1 = () => {
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [total, setTotal] = useState(0);
+  const [movementInterval, setMovementInterval] = useState(1000); // Velocidade do movimento em milissegundos
 
   useEffect(() => {
     axios.get('http://127.0.0.1:5000/products')
@@ -27,10 +29,10 @@ const Fase1 = () => {
         top: Math.random() * 90 + '%',
         left: Math.random() * 90 + '%'
       })));
-    }, 1000);
+    }, movementInterval);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [movementInterval]);
 
   const handleClick = (product) => {
     setSelectedProducts([...selectedProducts, product]);
@@ -38,9 +40,8 @@ const Fase1 = () => {
   };
 
   return (
-    <div>
-      <h1>Fase 1</h1>
-      <div style={{ width: '500px', height: '500px', position: 'relative', border: '1px solid black', overflow: 'hidden' }}>
+    <div className="container">
+      <div className="image-area">
         {products.map(product => (
           <img
             key={product.id}
@@ -58,7 +59,18 @@ const Fase1 = () => {
           />
         ))}
       </div>
-      <div>
+      <div className="sidebar">
+        <h1>Fase 1</h1>
+        <div className="controls">
+          <label htmlFor="interval">Movement Interval (ms): </label>
+          <input
+            id="interval"
+            type="number"
+            value={movementInterval}
+            onChange={(e) => setMovementInterval(Number(e.target.value))}
+            min="100"
+          />
+        </div>
         <h2>Selected Products</h2>
         <ul>
           {selectedProducts.map((product, index) => (
