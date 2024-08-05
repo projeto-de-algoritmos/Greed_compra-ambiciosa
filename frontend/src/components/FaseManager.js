@@ -15,17 +15,18 @@ const FaseManager = () => {
 
   useEffect(() => {
     fetchPhaseData(currentPhase);
-    fetchProducts();
   }, [currentPhase]);
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (numprod) => {
     try {
       const response = await axios.get('http://localhost:5000/products');
-      setProducts(response.data.map(product => ({
+      const allProducts = response.data;
+      const selectedProducts = allProducts.slice(0, numprod).map(product => ({
         ...product,
         top: `${Math.random() * 90}%`,
         left: `${Math.random() * 90}%`
-      })));
+      }));
+      setProducts(selectedProducts);
     } catch (error) {
       console.error("There was an error fetching the products!", error);
     }
@@ -34,11 +35,13 @@ const FaseManager = () => {
   const fetchPhaseData = async (phaseId) => {
     try {
       const response = await axios.get(`http://localhost:5000/phase/${phaseId}`);
-      setPhaseData(response.data);
+      const phase = response.data;
+      setPhaseData(phase);
       setStartTime(Date.now());
       setTotal(0);
       setSelectedProducts([]);
       setIsTiming(true);
+      fetchProducts(phase.numprod); // Passa o número de produtos para a função fetchProducts
     } catch (error) {
       console.error("There was an error fetching the phase data!", error);
     }
