@@ -18,6 +18,8 @@
 
 .image-area img {
   position: absolute;
+  width: 100px; 
+  height: 100px; 
 }
 
 .time-elapsed {

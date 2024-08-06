@@ -95,13 +95,18 @@ const Fase1 = ({ goal, timeLimit, onComplete }) => {
         </div>
         <h2>Selected Products</h2>
         <ul>
-          {selectedProducts.map((product, index) => (
-            <li key={index}>
-              <img src={`http://127.0.0.1:5000/${product.image}`} alt={product.name} width="50" />
-              <p>{product.name} - R${(product.price || 0).toFixed(2)}</p>
-            </li>
-          ))}
-        </ul>
+        {selectedProducts.map((product, index) => (
+          <li key={index}>
+            <img
+              src={`http://127.0.0.1:5000/${product.image}`}
+              alt={product.name}
+              width="100"  // Ajuste o valor conforme necessário
+              height="100" // Ajuste o valor conforme necessário
+            />
+            <p>{product.name} - R${(product.price || 0).toFixed(2)}</p>
+          </li>
+        ))}
+      </ul>
         <p className="total">Total: R${(total || 0).toFixed(2)}</p>
         <p className="goal">Goal: R${(goal || 0).toFixed(2)}</p>
       </div>
@@ -111,13 +116,15 @@ const Fase1 = ({ goal, timeLimit, onComplete }) => {
             key={product.id}
             src={`http://127.0.0.1:5000/${product.image}`}
             alt={product.name}
-            width="50"
+            width="1000"  // Ajuste o valor conforme necessário
+            height="1000" // Ajuste o valor conforme necessário
             style={{
               position: 'absolute',
               top: product.top,
               left: product.left,
               transition: 'top 1s, left 1s',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              objectFit: 'cover'  // Ajusta a imagem para cobrir a área sem distorcer
             }}
             onClick={() => handleClick(product)}
           />
