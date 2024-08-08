@@ -50,3 +50,20 @@ li {
 li img {
   margin-right: 10px;
 }
+
+.payment-container {
+  padding: 20px;
+  border-top: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+.coins {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.coins img {
+  cursor: pointer;
+}

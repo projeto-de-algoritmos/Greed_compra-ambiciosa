@@ -55,7 +55,7 @@ const Home = () => {
       <header className="App-header">
         <h1>Supermarket Game - Phase {phase}</h1>
         <p>Time left: {timeLeft}s</p>
-        <p>Total: ${total}</p>
+        <p>TotalLK: ${total}</p>
         <div className="game-area">
           {products.map(product => (
             <img
