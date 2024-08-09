@@ -1,30 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import './Fase1.css'; // Certifique-se de que o CSS está configurado corretamente
+import './Fase1.css'; 
 
 const FaseManager = () => {
   const [products, setProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [total, setTotal] = useState(0);
-  const [movementInterval, setMovementInterval] = useState(1000); // Velocidade do movimento em milissegundos
-  const [startTime, setStartTime] = useState(null); // Tempo de início da fase
-  const [timeElapsed, setTimeElapsed] = useState(0); // Tempo decorrido
-  const [isTiming, setIsTiming] = useState(true); // Controle de se o cronômetro está ativo
+  const [movementInterval, setMovementInterval] = useState(1000); 
+  const [startTime, setStartTime] = useState(null); 
+  const [timeElapsed, setTimeElapsed] = useState(0); 
+  const [isTiming, setIsTiming] = useState(true); 
   const [currentPhase, setCurrentPhase] = useState(1);
   const [phaseData, setPhaseData] = useState(null);
   const [coins, setCoins] = useState([]);
-  const [showPayment, setShowPayment] = useState(false); // Controle para exibir a sessão de pagamento
-  const [userCoins, setUserCoins] = useState([]); // Moedas que o usuário clicou
-  const [paymentComplete, setPaymentComplete] = useState(false); // Controle de pagamento
-  const [greedyData, setGreedyData] = useState(null); // Dados retornados pela rota /greedy
+  const [showPayment, setShowPayment] = useState(false); 
+  const [userCoins, setUserCoins] = useState([]); 
+  const [paymentComplete, setPaymentComplete] = useState(false); 
+  const [greedyData, setGreedyData] = useState(null); 
 
-  // Fetch Phase Data
+  
   useEffect(() => {
     fetchPhaseData(currentPhase);
-    fetchCoins(); // Chama a função para buscar moedas
+    fetchCoins(); 
   }, [currentPhase]);
 
-  // Fetch Products
+  
   const fetchProducts = async (numprod) => {
     try {
       const response = await axios.get('http://localhost:5000/products');
@@ -40,7 +40,7 @@ const FaseManager = () => {
     }
   };
 
-  // Fetch Phase Data
+  
   const fetchPhaseData = async (phaseId) => {
     try {
       const response = await axios.get(`http://localhost:5000/phase/${phaseId}`);
@@ -50,16 +50,16 @@ const FaseManager = () => {
       setTotal(0);
       setSelectedProducts([]);
       setIsTiming(true);
-      setShowPayment(false); // Esconde o pagamento no início da fase
-      setUserCoins([]); // Limpa as moedas clicadas
-      setPaymentComplete(false); // Reseta o status de pagamento
-      fetchProducts(phase.numprod); // Passa o número de produtos para a função fetchProducts
+      setShowPayment(false); 
+      setUserCoins([]); 
+      setPaymentComplete(false); 
+      fetchProducts(phase.numprod); 
     } catch (error) {
       console.error("There was an error fetching the phase data!", error);
     }
   };
 
-  // Fetch Coins
+  
   const fetchCoins = async () => {
     try {
       const response = await axios.get('http://localhost:5000/coins');
@@ -69,12 +69,11 @@ const FaseManager = () => {
     }
   };
 
-  // Fetch Greedy Data
   const fetchGreedyData = async () => {
     try {
       const response = await axios.post('http://localhost:5000/greedy', {
-        budget: phaseData?.budget || 0, // Verifique se phaseData está definido
-        products: products
+        budget: total, 
+        products: selectedProducts 
       });
       setGreedyData(response.data);
     } catch (error) {
@@ -82,26 +81,24 @@ const FaseManager = () => {
     }
   };
 
-  // Timer and Payment Display
   useEffect(() => {
     if (startTime && isTiming) {
       const timer = setInterval(() => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
         setTimeElapsed(elapsed);
-        if (elapsed >= (phaseData?.time || 0)) { // Verifique se phaseData está definido
+        if (elapsed >= (phaseData?.time || 0)) { 
           setIsTiming(false);
-          setShowPayment(true); // Mostra o container de pagamento ao final do tempo
-          fetchGreedyData(); // Busca os dados da rota /greedy
+          setShowPayment(true); 
+          fetchGreedyData(); 
         }
-      }, 100); // Atualiza a cada 100 ms
+      }, 100); 
 
       return () => clearInterval(timer);
     }
   }, [startTime, isTiming, phaseData]);
 
-  // Product Movement
   useEffect(() => {
-    if (showPayment) return; // Para o movimento dos produtos quando o pagamento começar
+    if (showPayment) return; 
 
     const interval = setInterval(() => {
       setProducts(prevProducts => prevProducts.map(product => ({
@@ -114,13 +111,12 @@ const FaseManager = () => {
     return () => clearInterval(interval);
   }, [movementInterval, showPayment]);
 
-  // Handle Product Click
   const handleClick = (product) => {
-    if (showPayment) return; // Desativa a seleção de produtos quando o pagamento começar
+    if (showPayment) return; 
 
     const newTotal = total + product.price;
 
-    if (newTotal <= phaseData?.budget) { // Verifique se phaseData está definido
+    if (newTotal <= phaseData?.budget) { 
       const existingProduct = selectedProducts.find(p => p.id === product.id);
 
       if (existingProduct) {
@@ -132,66 +128,68 @@ const FaseManager = () => {
 
       setTotal(newTotal);
 
-      if (newTotal === phaseData?.budget) { // Verifique se phaseData está definido
+      if (newTotal === phaseData?.budget) { 
         setIsTiming(false);
-        setShowPayment(true); // Mostra o container de pagamento ao atingir a meta
-        fetchGreedyData(); // Busca os dados da rota /greedy
+        setShowPayment(true);
+        fetchGreedyData();
       }
     } else {
       setIsTiming(false);
-      setShowPayment(true); // Abre o container de pagamento imediatamente
-      fetchGreedyData(); // Busca os dados da rota /greedy
+      setShowPayment(true); 
+      fetchGreedyData(); 
       alert('Você não pode adicionar mais produtos, o valor meta será excedido!');
     }
   };
 
-  // Handle Coin Click
+  
   const handlePaymentClick = (coin) => {
     const newTotalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0) + coin.price;
-
-    // Verifica se o valor total das moedas selecionadas não excede o valor total a ser pago
+    
     if (newTotalCoinsValue <= total) {
-      setUserCoins(prevCoins => [...prevCoins, coin]); // Adiciona a moeda completa
+      setUserCoins(prevCoins => [...prevCoins, coin]);
     } else {
       alert('O valor total das moedas selecionadas excede o valor a pagar!');
     }
-  };
+  }
+  
 
-  // Handle Payment Confirmation
-  const handleConfirmPayment = async () => {
-    const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
+  
 
-    if (totalCoinsValue < total) {
-      alert('Você não selecionou moedas suficientes para pagar!');
-      setUserCoins([]); // Reseta as moedas selecionadas
-      return;
+const handleConfirmPayment = async () => {
+  const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
+
+  if (totalCoinsValue < total) {
+    alert('Você não selecionou moedas suficientes para pagar!');
+    setUserCoins([]);
+    return;
+  }
+
+  try {
+    const response = await axios.post('http://localhost:5000/troco', {
+      amount: total, 
+      user_solution: userCoins.map(coin => coin.price * 100) 
+    });
+    const { is_optimal } = response.data;
+    if (is_optimal) {
+      setPaymentComplete(true);
+      setTimeout(() => {
+        setCurrentPhase(prevPhase => prevPhase + 1); 
+        setStartTime(null);
+        setTimeElapsed(0);
+        setShowPayment(false);
+        setUserCoins([]); 
+      }, 1000); 
+    } else {
+      alert('Troco não é ótimo, tente novamente.');
+      setUserCoins([]); 
     }
+  } catch (error) {
+    console.error("There was an error confirming the payment!", error);
+  }
+};
 
-    try {
-      const response = await axios.post('http://localhost:5000/troco', {
-        amount: phaseData.budget, // altra para Passa o valor de troco como `meta - total`
-        user_solution: userCoins.map(coin => coin.price * 100) // Multiplica o valor das moedas por 100
-      });
-      const { is_optimal } = response.data;
-      if (is_optimal) {
-        setPaymentComplete(true);
-        setTimeout(() => {
-          setCurrentPhase(prevPhase => prevPhase + 1); // Avança para a próxima fase
-          setStartTime(null);
-          setTimeElapsed(0);
-          setShowPayment(false);
-          setUserCoins([]); // Limpa as moedas clicadas
-        }, 1000); // Pequeno delay antes de avançar
-      } else {
-        alert('Troco  não é ótimo, tente novamente.');
-        setUserCoins([]); // Reseta as moedas selecionadas ao errar
-      }
-    } catch (error) {
-      console.error("There was an error confirming the payment!", error);
-    }
-  };
 
-  // Calcula o valor total das moedas selecionadas
+  
   const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
 
   if (!phaseData) {
@@ -211,20 +209,20 @@ const FaseManager = () => {
             value={movementInterval}
             onChange={(e) => setMovementInterval(Number(e.target.value))}
             min="100"
-            disabled={showPayment} // Desativa a mudança de intervalo durante o pagamento
+            disabled={showPayment}
           />
         </div>
         <h2>Produtos Selecionados</h2>
         <ul>
-          {selectedProducts.map((product, index) => (
-            <li key={index}>
-              <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
-              <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
-            </li>
-          ))}
-        </ul>
-        <p className="total">Total: R${(total || 0).toFixed(2)}</p>
-        <p className="goal">Meta: R${(phaseData.budget || 0).toFixed(2)}</p>
+        {selectedProducts.map((product, index) => (
+          <li key={index}>
+            <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
+            <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
+          </li>
+        ))}
+      </ul>
+      <p className="total">Total: R${(total || 0).toFixed(2)}</p>
+      <p className="goal">Meta: R${(phaseData.budget || 0).toFixed(2)}</p>
       </div>
       <div className="image-area">
         {products.map(product => (
