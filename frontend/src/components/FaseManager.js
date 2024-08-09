@@ -16,12 +16,15 @@ const FaseManager = () => {
   const [showPayment, setShowPayment] = useState(false); // Controle para exibir a sessão de pagamento
   const [userCoins, setUserCoins] = useState([]); // Moedas que o usuário clicou
   const [paymentComplete, setPaymentComplete] = useState(false); // Controle de pagamento
+  const [greedyData, setGreedyData] = useState(null); // Dados retornados pela rota /greedy
 
+  // Fetch Phase Data
   useEffect(() => {
     fetchPhaseData(currentPhase);
     fetchCoins(); // Chama a função para buscar moedas
   }, [currentPhase]);
 
+  // Fetch Products
   const fetchProducts = async (numprod) => {
     try {
       const response = await axios.get('http://localhost:5000/products');
@@ -37,6 +40,7 @@ const FaseManager = () => {
     }
   };
 
+  // Fetch Phase Data
   const fetchPhaseData = async (phaseId) => {
     try {
       const response = await axios.get(`http://localhost:5000/phase/${phaseId}`);
@@ -55,6 +59,7 @@ const FaseManager = () => {
     }
   };
 
+  // Fetch Coins
   const fetchCoins = async () => {
     try {
       const response = await axios.get('http://localhost:5000/coins');
@@ -64,14 +69,29 @@ const FaseManager = () => {
     }
   };
 
+  // Fetch Greedy Data
+  const fetchGreedyData = async () => {
+    try {
+      const response = await axios.post('http://localhost:5000/greedy', {
+        budget: phaseData?.budget || 0, // Verifique se phaseData está definido
+        products: products
+      });
+      setGreedyData(response.data);
+    } catch (error) {
+      console.error("There was an error fetching the greedy data!", error);
+    }
+  };
+
+  // Timer and Payment Display
   useEffect(() => {
     if (startTime && isTiming) {
       const timer = setInterval(() => {
         const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
         setTimeElapsed(elapsed);
-        if (elapsed >= phaseData.time) {
+        if (elapsed >= (phaseData?.time || 0)) { // Verifique se phaseData está definido
           setIsTiming(false);
           setShowPayment(true); // Mostra o container de pagamento ao final do tempo
+          fetchGreedyData(); // Busca os dados da rota /greedy
         }
       }, 100); // Atualiza a cada 100 ms
 
@@ -79,6 +99,7 @@ const FaseManager = () => {
     }
   }, [startTime, isTiming, phaseData]);
 
+  // Product Movement
   useEffect(() => {
     if (showPayment) return; // Para o movimento dos produtos quando o pagamento começar
 
@@ -93,31 +114,41 @@ const FaseManager = () => {
     return () => clearInterval(interval);
   }, [movementInterval, showPayment]);
 
+  // Handle Product Click
   const handleClick = (product) => {
     if (showPayment) return; // Desativa a seleção de produtos quando o pagamento começar
-  
+
     const newTotal = total + product.price;
-  
-    if (newTotal <= phaseData.budget) {
-      setSelectedProducts([...selectedProducts, product]);
+
+    if (newTotal <= phaseData?.budget) { // Verifique se phaseData está definido
+      const existingProduct = selectedProducts.find(p => p.id === product.id);
+
+      if (existingProduct) {
+        existingProduct.quantity += 1;
+        setSelectedProducts([...selectedProducts]);
+      } else {
+        setSelectedProducts([...selectedProducts, { ...product, quantity: 1 }]);
+      }
+
       setTotal(newTotal);
-  
-      if (newTotal === phaseData.budget) {
+
+      if (newTotal === phaseData?.budget) { // Verifique se phaseData está definido
         setIsTiming(false);
         setShowPayment(true); // Mostra o container de pagamento ao atingir a meta
+        fetchGreedyData(); // Busca os dados da rota /greedy
       }
     } else {
-      // Se o valor total exceder o orçamento, finalize a seleção e abra o pagamento
       setIsTiming(false);
       setShowPayment(true); // Abre o container de pagamento imediatamente
+      fetchGreedyData(); // Busca os dados da rota /greedy
       alert('Você não pode adicionar mais produtos, o valor meta será excedido!');
     }
   };
-  
 
+  // Handle Coin Click
   const handlePaymentClick = (coin) => {
     const newTotalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0) + coin.price;
-  
+
     // Verifica se o valor total das moedas selecionadas não excede o valor total a ser pago
     if (newTotalCoinsValue <= total) {
       setUserCoins(prevCoins => [...prevCoins, coin]); // Adiciona a moeda completa
@@ -125,20 +156,20 @@ const FaseManager = () => {
       alert('O valor total das moedas selecionadas excede o valor a pagar!');
     }
   };
-  
 
+  // Handle Payment Confirmation
   const handleConfirmPayment = async () => {
     const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
-    
+
     if (totalCoinsValue < total) {
       alert('Você não selecionou moedas suficientes para pagar!');
       setUserCoins([]); // Reseta as moedas selecionadas
       return;
     }
-    
+
     try {
       const response = await axios.post('http://localhost:5000/troco', {
-        amount: total,
+        amount: phaseData.budget, // altra para Passa o valor de troco como `meta - total`
         user_solution: userCoins.map(coin => coin.price * 100) // Multiplica o valor das moedas por 100
       });
       const { is_optimal } = response.data;
@@ -152,14 +183,13 @@ const FaseManager = () => {
           setUserCoins([]); // Limpa as moedas clicadas
         }, 1000); // Pequeno delay antes de avançar
       } else {
-        alert('Pagamento não é ótimo, tente novamente.');
+        alert('Troco  não é ótimo, tente novamente.');
         setUserCoins([]); // Reseta as moedas selecionadas ao errar
       }
     } catch (error) {
       console.error("There was an error confirming the payment!", error);
     }
   };
-   
 
   // Calcula o valor total das moedas selecionadas
   const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
@@ -189,7 +219,7 @@ const FaseManager = () => {
           {selectedProducts.map((product, index) => (
             <li key={index}>
               <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
-              <p>{product.name} - R${(product.price || 0).toFixed(2)}</p>
+              <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
             </li>
           ))}
         </ul>
@@ -217,6 +247,23 @@ const FaseManager = () => {
       {showPayment && (
         <div className="payment-container">
           <h2>Pagamento</h2>
+          {greedyData && (
+            <div className="greedy-info">
+              <h3>Dados do Greedy:</h3>
+              <p>Produtos Escolhidos: {greedyData.chosen_products ? greedyData.chosen_products.map(p => p.name).join(', ') : 'Nenhum produto selecionado'}</p>
+              <ul>
+                {greedyData.chosen_products.map((product, index) => (
+                  <li key={index}>
+                    <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
+                    <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
+                  </li>
+                ))}
+              </ul>
+
+              <p>Total: R${(greedyData.preco_total || 0).toFixed(2)}</p>
+              <p>Quantidade Total de Produtos: {greedyData.total_quantity || 0}</p>
+            </div>
+          )}
           <p>Total Moedas Selecionadas: R${(totalCoinsValue).toFixed(2)}</p>
           <div className="coins">
             {coins.map((coin) => (
