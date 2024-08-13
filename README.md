@@ -1,11 +1,10 @@
 # Temas:
- - Algoritmos Gulosos
+ - Algoritmos ambiciosos
 
 
 ## Supermarket Product Selection Game
 
-**Número da Lista**: X<br>
-**Conteúdo da Disciplina**: Algoritmos Gulosos<br>
+**Conteúdo da Disciplina**: Algoritmos Ambiciosos<br>
 
 ## Alunos
 | Matrícula | Aluno |
@@ -14,17 +13,18 @@
 | 20/2063346  | José Filipi Brito Souza |
 
 ## Sobre 
-Este projeto implementa um jogo interativo onde o usuário deve selecionar produtos de supermercado com base em um orçamento definido. Os produtos se movem na tela, e o usuário deve clicar neles para adicioná-los ao carrinho. Quando o orçamento é atingido ou o tempo acaba, o usuário deve selecionar as moedas para confirmar o pagamento, utilizando um algoritmo guloso para determinar a melhor combinação possível de moedas para o pagamento, bem como é apresentado qual seria os produtos e as suas quantidades selecionados pelo algoritimo guloso .
+Este projeto implementa um jogo interativo onde o usuário deve selecionar produtos de supermercado com base em um orçamento definido. Os produtos se movem na tela, e o usuário deve clicar neles para adicioná-los ao carrinho. Quando o orçamento é atingido ou o tempo acaba, o usuário deve selecionar as moedas para confirmar o pagamento, utilizando um algoritmo ambicioso para determinar a melhor combinação possível de moedas para o pagamento, bem como é apresentado qual seria os produtos e as suas quantidades selecionados pelo algoritimo ambicioso.
 
 ## Screenshots
 ### Tela Inicial do Jogo
-![Tela Inicial](./assert/tela_inicial.png)
-
-### Produtos em Movimento
-![Produtos em Movimento](./assert/produtos_movimento.png)
+![Tela Inicial](./imagens/tela_inicial.png)
 
 ### Tela de Pagamento
-![Tela de Pagamento](./assert/tela_pagamento.png)
+![Tela de Pagamento](./imagens/tela_pagamento.png)
+
+### Aplicação completa
+![Produtos em Movimento](./imagens/tela_completa.png)
+
 
 ## Instalação 
 **Linguagem**: Python 3.x, JavaScript (React)<br>
@@ -47,3 +47,7 @@ git clone https://github.com/seu-usuario/seu-repositorio.git
 cd seu-repositorio
 chmod +x install.sh
 ./install.sh
+
+```
+
+## Vídeo da apresentação
