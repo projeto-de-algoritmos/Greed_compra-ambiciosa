@@ -1,4 +1,4 @@
-# Supermarket Product Selection Game
+# Comprando com ambição 😈
 
 ## Temas:
  - Algoritmos ambiciosos
