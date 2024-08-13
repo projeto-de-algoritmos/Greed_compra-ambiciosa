@@ -1,10 +1,7 @@
-# Temas:
+# Supermarket Product Selection Game
+
+## Temas:
  - Algoritmos ambiciosos
-
-
-## Supermarket Product Selection Game
-
-**Conteúdo da Disciplina**: Algoritmos Ambiciosos<br>
 
 ## Alunos
 | Matrícula | Aluno |
