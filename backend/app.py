@@ -82,23 +82,27 @@ coins = random.sample(moedas, len(moedas))
 
 # Dados para fases no formato desejado
 phases = [
-    {"phase": 1, "speed": 1, "time": 20, "budget": 35.65, "numprod": 4},
+    {"phase": 1, "speed": 1, "time": 25, "budget": 35.65, "numprod": 4},
     {"phase": 2, "speed": 2, "time": 45, "budget": 18.95, "numprod": 8},
     {"phase": 3, "speed": 3, "time": 30, "budget": 27.90, "numprod": 6},
     {"phase": 4, "speed": 4, "time": 60, "budget": 30.80, "numprod": 6}
 ]
 
+
 @app.route('/products', methods=['GET'])
 def get_products():
     return jsonify(products)
+
 
 @app.route('/coins', methods=['GET'])
 def get_coins():
     return jsonify(coins)
 
+
 @app.route('/phases', methods=['GET'])
 def get_phases():
     return jsonify(phases)
+
 
 @app.route('/phase/<int:phase_id>', methods=['GET'])
 def get_phase(phase_id):
@@ -108,11 +112,12 @@ def get_phase(phase_id):
     else:
         return jsonify({"error": "Phase not found"}), 404
 
+
 @app.route('/greedy', methods=['POST'])
 def run_greedy():
     data = request.json
     budget = data.get('budget', 0)
-    products = data.get('products', [])  # Recebe a lista de produtos do front-end
+    products = data.get('products', [])
 
     if not products:
         return jsonify({"error": "Nenhum produto recebido"}), 400
@@ -154,7 +159,7 @@ def run_greedy():
             break
 
     total_quantity = sum(p['quantity'] for p in chosen_products)
-    
+
     # Imprime o resultado final
     print(f"Lista final de produtos escolhidos: {chosen_products}")
     print(f"Preço total final: {preco_total}")
@@ -165,6 +170,23 @@ def run_greedy():
         "preco_total": preco_total,
         "total_quantity": total_quantity
     })
+
+
+@app.route('/compare', methods=['POST'])
+def compare_solutions():
+    data = request.json
+    greedy_data = data.get('greedy', {})
+    player_data = data.get('player', {})
+
+    greedy_total = greedy_data.get('preco_total', 0)
+    player_total = player_data.get('total', 0)
+
+    if greedy_total == 0:
+        return jsonify({"error": "Solução do algoritmo greedy não pode ser zero para comparação."}), 400
+
+    percentage_difference = abs((player_total - greedy_total) / greedy_total) * 100
+
+    return jsonify({"percentage_difference": percentage_difference})
 
 
 @app.route('/troco', methods=['POST'])
@@ -197,16 +219,17 @@ def min_troco():
     app.logger.debug(f'Solução do usuário: {user_solution_in_cents}')
     app.logger.debug(f'Valor total esperado: {amount}')
     app.logger.debug(f'Valor total fornecido: {sum(user_solution_in_cents)}')
-   
 
     return jsonify({
         "optimal_solution": optimal_solution,
         "is_optimal": is_optimal
     })
-# Serve arquivos estáticos
+
+
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory(STATIC_FOLDER, filename)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
