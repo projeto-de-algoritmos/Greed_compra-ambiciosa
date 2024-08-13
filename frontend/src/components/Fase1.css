@@ -67,3 +67,30 @@ li img {
 .coins img {
   cursor: pointer;
 }
+
+.player-result, .greedy-info {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+}
+
+.player-result h3, .greedy-info h3 {
+  margin-bottom: 10px;
+}
+
+.player-result ul, .greedy-info ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.player-result li, .greedy-info li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.player-result img, .greedy-info img {
+  margin-right: 10px;
+}

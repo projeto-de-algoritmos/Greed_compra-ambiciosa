@@ -72,14 +72,15 @@ const FaseManager = () => {
   const fetchGreedyData = async () => {
     try {
       const response = await axios.post('http://localhost:5000/greedy', {
-        budget: total, 
-        products: selectedProducts 
+        budget: phaseData.budget, // Envia o objetivo da fase
+        products: products // Envia todos os produtos disponíveis na fase
       });
       setGreedyData(response.data);
     } catch (error) {
       console.error("There was an error fetching the greedy data!", error);
     }
   };
+  
 
   useEffect(() => {
     if (startTime && isTiming) {
@@ -89,17 +90,18 @@ const FaseManager = () => {
         if (elapsed >= (phaseData?.time || 0)) { 
           setIsTiming(false);
           setShowPayment(true); 
-          fetchGreedyData(); 
+          fetchGreedyData();
         }
       }, 100); 
-
+  
       return () => clearInterval(timer);
     }
   }, [startTime, isTiming, phaseData]);
+  
 
   useEffect(() => {
     if (showPayment) return; 
-
+  
     const interval = setInterval(() => {
       setProducts(prevProducts => prevProducts.map(product => ({
         ...product,
@@ -107,28 +109,29 @@ const FaseManager = () => {
         left: `${Math.random() * 90}%`
       })));
     }, movementInterval);
-
+  
     return () => clearInterval(interval);
   }, [movementInterval, showPayment]);
+  
 
   const handleClick = (product) => {
     if (showPayment) return; 
-
+  
     const newTotal = total + product.price;
-
+  
     if (newTotal <= phaseData?.budget) { 
       const existingProduct = selectedProducts.find(p => p.id === product.id);
-
+  
       if (existingProduct) {
         existingProduct.quantity += 1;
         setSelectedProducts([...selectedProducts]);
       } else {
         setSelectedProducts([...selectedProducts, { ...product, quantity: 1 }]);
       }
-
+  
       setTotal(newTotal);
-
-      if (newTotal === phaseData?.budget) { 
+  
+      if (newTotal >= phaseData?.budget) { // Verifique se o total é maior ou igual à meta
         setIsTiming(false);
         setShowPayment(true);
         fetchGreedyData();
@@ -140,6 +143,16 @@ const FaseManager = () => {
       alert('Você não pode adicionar mais produtos, o valor meta será excedido!');
     }
   };
+  
+  
+  
+  
+  useEffect(() => {
+    if (showPayment) {
+      fetchGreedyData();
+    }
+  }, [showPayment]);
+  
 
   
   const handlePaymentClick = (coin) => {
@@ -153,42 +166,59 @@ const FaseManager = () => {
   }
   
 
-  
-
-const handleConfirmPayment = async () => {
-  const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
-
-  if (totalCoinsValue < total) {
-    alert('Você não selecionou moedas suficientes para pagar!');
-    setUserCoins([]);
-    return;
-  }
-
-  try {
-    const response = await axios.post('http://localhost:5000/troco', {
-      amount: total, 
-      user_solution: userCoins.map(coin => coin.price * 100) 
-    });
-    const { is_optimal } = response.data;
-    if (is_optimal) {
-      setPaymentComplete(true);
-      setTimeout(() => {
-        setCurrentPhase(prevPhase => prevPhase + 1); 
-        setStartTime(null);
-        setTimeElapsed(0);
-        setShowPayment(false);
-        setUserCoins([]); 
-      }, 1000); 
-    } else {
-      alert('Troco não é ótimo, tente novamente.');
-      setUserCoins([]); 
+  const handleConfirmPayment = async () => {
+    // Verificar se nenhum produto foi selecionado
+    if (selectedProducts.length === 0) {
+      alert('Você não selecionou nenhum produto. A fase será reiniciada.');
+      // Reinicie a fase
+      fetchPhaseData(currentPhase); 
+      return;
     }
-  } catch (error) {
-    console.error("There was an error confirming the payment!", error);
-  }
-};
-
-
+  
+    const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
+  
+    if (totalCoinsValue < total) {
+      alert('Você não selecionou moedas suficientes para pagar!');
+      setUserCoins([]);
+      return;
+    }
+  
+    try {
+      const response = await axios.post('http://localhost:5000/troco', {
+        amount: total, 
+        user_solution: userCoins.map(coin => coin.price * 100) 
+      });
+      const { is_optimal } = response.data;
+      if (is_optimal) {
+        const playerSolution = {
+          total: total, 
+          quantity: selectedProducts.reduce((acc, p) => acc + p.quantity, 0)
+        };
+  
+        const comparisonResponse = await axios.post('http://localhost:5000/compare', {
+          greedy: greedyData,
+          player: playerSolution
+        });
+  
+        const { percentage_difference } = comparisonResponse.data;
+        alert(`A diferença percentual entre a solução do jogador e a solução do algoritmo greedy é ${percentage_difference.toFixed(2)}%`);
+  
+        setPaymentComplete(true);
+        setTimeout(() => {
+          setCurrentPhase(prevPhase => prevPhase + 1);
+          setStartTime(null);
+          setTimeElapsed(0);
+          setShowPayment(false);
+          setUserCoins([]); 
+        }, 1000); 
+      } else {
+        alert('Troco não é ótimo, tente novamente.');
+        setUserCoins([]); 
+      }
+    } catch (error) {
+      console.error("There was an error confirming the payment!", error);
+    }
+  };  
   
   const totalCoinsValue = userCoins.reduce((acc, coin) => acc + coin.price, 0);
 
@@ -243,41 +273,50 @@ const handleConfirmPayment = async () => {
         ))}
       </div>
       {showPayment && (
-        <div className="payment-container">
-          <h2>Pagamento</h2>
-          {greedyData && (
-            <div className="greedy-info">
-              <h3>Dados do Greedy:</h3>
-              <p>Produtos Escolhidos: {greedyData.chosen_products ? greedyData.chosen_products.map(p => p.name).join(', ') : 'Nenhum produto selecionado'}</p>
-              <ul>
-                {greedyData.chosen_products.map((product, index) => (
-                  <li key={index}>
-                    <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
-                    <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
-                  </li>
-                ))}
-              </ul>
-
-              <p>Total: R${(greedyData.preco_total || 0).toFixed(2)}</p>
-              <p>Quantidade Total de Produtos: {greedyData.total_quantity || 0}</p>
-            </div>
-          )}
-          <p>Total Moedas Selecionadas: R${(totalCoinsValue).toFixed(2)}</p>
-          <div className="coins">
-            {coins.map((coin) => (
-              <img
-                key={coin.id}
-                src={`http://localhost:5000/static/${coin.image}`}
-                alt={coin.name}
-                width="50"
-                onClick={() => handlePaymentClick(coin)}
-                style={{ cursor: 'pointer' }}
-              />
-            ))}
-          </div>
-          <button onClick={handleConfirmPayment} disabled={paymentComplete}>Confirmar Pagamento</button>
-        </div>
-      )}
+  <div className="payment-container">
+    <h2>Pagamento</h2>
+    {greedyData && (
+      <div className="greedy-info">
+        <h3>Melhor solução:</h3>
+        <ul>
+          {greedyData.chosen_products.map((product, index) => (
+            <li key={index}>
+              <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
+              <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
+            </li>
+          ))}
+        </ul>
+        <p>Total: R${(greedyData.preco_total || 0).toFixed(2)}</p>
+      </div>
+    )}
+    <div className="player-result">
+      <h3>Sua solução:</h3>
+      <ul>
+        {selectedProducts.map((product, index) => (
+          <li key={index}>
+            <img src={`http://localhost:5000/static/${product.image}`} alt={product.name} width="50" />
+            <p>{product.name} - R${(product.price || 0).toFixed(2)} - Quantidade: {product.quantity || 1}</p>
+          </li>
+        ))}
+      </ul>
+       <p>Total: R${total.toFixed(2)}</p>
+    </div>
+    <p>Total Moedas Selecionadas: R${(totalCoinsValue).toFixed(2)}</p>
+    <div className="coins">
+      {coins.map((coin) => (
+        <img
+          key={coin.id}
+          src={`http://localhost:5000/static/${coin.image}`}
+          alt={coin.name}
+          width="50"
+          onClick={() => handlePaymentClick(coin)}
+          style={{ cursor: 'pointer' }}
+        />
+      ))}
+    </div>
+    <button onClick={handleConfirmPayment} disabled={paymentComplete}>Confirmar Pagamento</button>
+  </div>
+)}
     </div>
   );
 };
